@@ -4,7 +4,7 @@ services:
   # Servicio de base de datos PostgreSQL | CONFUGURACION DE LA BASE DE DATOS
   db:
     image: postgres:15-alpine
-    container_name: prestamos_db
+    container_name: mare_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
