@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Asignaciones{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Asignaciones</h2>
+        <a href="{% url 'asignacion_create' %}" class="btn btn-primary">Nueva asignación</a>
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Solicitud</th>
+                <th>Embarcación</th>
+                <th>Muelle</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Posiciones</th>
+                <th>Administrador</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asignacion in asignaciones %}
+            <tr>
+                <td>{{ asignacion.id }}</td>
+                <td>#{{ asignacion.solicitud.id }}</td>
+                <td>{{ asignacion.solicitud.embarcacion.nombre_bote }}</td>
+                <td>{{ asignacion.muelle.nombre }}</td>
+                <td>{{ asignacion.fecha_inicio }}</td>
+                <td>{{ asignacion.fecha_fin }}</td>
+                <td>{{ asignacion.pos_inicio }} - {{ asignacion.pos_fin }}</td>
+                <td>{{ asignacion.administrador.username }}</td>
+                <td>
+                    <a href="{% url 'asignacion_detail' asignacion.id %}" class="btn btn-default">Ver</a>
+                    <a href="{% url 'asignacion_update' asignacion.id %}" class="btn btn-secondary">Editar</a>
+                    <a href="{% url 'asignacion_delete' asignacion.id %}" class="btn btn-danger">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">No hay asignaciones registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">Primera</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+        {% endif %}
+
+        <span class="current">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

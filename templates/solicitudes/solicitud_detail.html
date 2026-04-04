@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de solicitud{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <h2>Solicitud #{{ solicitud.id }}</h2>
+        <div>
+            <a href="{% url 'solicitud_update' solicitud.id %}" class="btn btn-secondary">Editar</a>
+            <a href="{% url 'solicitud_delete' solicitud.id %}" class="btn btn-danger">Eliminar</a>
+            <a href="{% url 'solicitud_list' %}" class="btn btn-default">Volver</a>
+        </div>
+    </div>
+
+    <p><strong>Embarcación:</strong> {{ solicitud.embarcacion.nombre_bote }}</p>
+    <p><strong>Cliente:</strong> {{ solicitud.embarcacion.cliente.fullname }}</p>
+    <p><strong>Tipo de barco:</strong> {{ solicitud.embarcacion.tipo_barco.tipo_barco }}</p>
+    <p><strong>Fecha solicitud:</strong> {{ solicitud.fecha_solicitud }}</p>
+    <p><strong>Fecha llegada:</strong> {{ solicitud.fecha_llegada }}</p>
+    <p><strong>Fecha salida:</strong> {{ solicitud.fecha_salida }}</p>
+    <p><strong>Estado:</strong> {{ solicitud.estado }}</p>
+    <p><strong>Comentario:</strong> {{ solicitud.comentario|default:"Sin comentario" }}</p>
+</div>
+
+<div class="card">
+    <h3>Cambiar estado</h3>
+    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'ACTIVA' %}" class="btn btn-success">Marcar activa</a>
+    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'COMPLETADA' %}" class="btn btn-primary">Marcar completada</a>
+    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'CANCELADA' %}" class="btn btn-warning">Cancelar</a>
+</div>
+
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Asignaciones</h3>
+        <a href="{% url 'asignacion_create' %}" class="btn btn-primary">Nueva asignación</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Muelle</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Posición</th>
+                <th>Administrador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asignacion in asignaciones %}
+            <tr>
+                <td>{{ asignacion.muelle.nombre }}</td>
+                <td>{{ asignacion.fecha_inicio }}</td>
+                <td>{{ asignacion.fecha_fin }}</td>
+                <td>{{ asignacion.pos_inicio }} - {{ asignacion.pos_fin }}</td>
+                <td>{{ asignacion.administrador.username }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No hay asignaciones registradas para esta solicitud.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>Historial de estados</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Estado anterior</th>
+                <th>Estado nuevo</th>
+                <th>Fecha de cambio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in historial %}
+            <tr>
+                <td>{{ item.estado_anterior|default:"Inicial" }}</td>
+                <td>{{ item.estado_nuevo }}</td>
+                <td>{{ item.fecha_cambio }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No hay historial registrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

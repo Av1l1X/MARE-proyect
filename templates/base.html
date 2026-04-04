@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MARE{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fa;
+        }
+        header {
+            background: #0f4c81;
+            color: white;
+            padding: 1rem 2rem;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 1rem;
+            font-weight: bold;
+        }
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 2rem auto;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.55rem 1rem;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-right: 0.4rem;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary { background: #0f4c81; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #198754; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-default { background: #e9ecef; color: black; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 0.7rem;
+            text-align: left;
+        }
+        table th {
+            background: #f1f3f5;
+        }
+        form label {
+            display: block;
+            margin-top: 0.8rem;
+            font-weight: bold;
+        }
+        form input, form select, form textarea {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.3rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .message {
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+        .success { background: #d1e7dd; color: #0f5132; }
+        .error { background: #f8d7da; color: #842029; }
+        .warning { background: #fff3cd; color: #664d03; }
+        .info { background: #cff4fc; color: #055160; }
+        .errors-box {
+            background: #f8d7da;
+            color: #842029;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        .pagination {
+            margin-top: 1rem;
+        }
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 0.5rem 0.8rem;
+            margin-right: 0.3rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: black;
+        }
+        .pagination .current {
+            background: #0f4c81;
+            color: white;
+            border-color: #0f4c81;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MARE</h1>
+        <nav>
+            <a href="/solicitudes/">Solicitudes</a>
+            <a href="/asignaciones/">Asignaciones</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

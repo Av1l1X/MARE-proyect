@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar asignación{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Eliminar asignación</h2>
+    <p>¿Seguro que deseas eliminar la asignación <strong>#{{ asignacion.id }}</strong> del muelle <strong>{{ asignacion.muelle.nombre }}</strong>?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+        <a href="{% url 'asignacion_detail' asignacion.id %}" class="btn btn-default">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

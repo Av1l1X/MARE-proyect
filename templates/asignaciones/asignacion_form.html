@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if asignacion %}Editar asignación{% else %}Nueva asignación{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if asignacion %}Editar asignación{% else %}Nueva asignación{% endif %}</h2>
+
+    {% if errors %}
+        <div class="errors-box">
+            <strong>Corrige los siguientes errores:</strong>
+            <ul>
+                {% if errors.items %}
+                    {% for campo, lista in errors.items %}
+                        {% for error in lista %}
+                            <li><strong>{{ campo }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="solicitud">Solicitud</label>
+        <select name="solicitud" id="solicitud" required>
+            <option value="">Seleccione una solicitud</option>
+            {% for solicitud in solicitudes %}
+                <option value="{{ solicitud.id }}"
+                    {% if asignacion.solicitud_id == solicitud.id %}selected{% endif %}>
+                    Solicitud #{{ solicitud.id }} - {{ solicitud.embarcacion.nombre_bote }} - {{ solicitud.embarcacion.cliente.fullname }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="muelle">Muelle</label>
+        <select name="muelle" id="muelle" required>
+            <option value="">Seleccione un muelle</option>
+            {% for muelle in muelles %}
+                <option value="{{ muelle.id }}"
+                    {% if asignacion.muelle_id == muelle.id %}selected{% endif %}>
+                    {{ muelle.nombre }} - Tamaño máximo: {{ muelle.tam_maximo }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="fecha_inicio">Fecha inicio</label>
+        <input type="date" name="fecha_inicio" id="fecha_inicio"
+               value="{% if asignacion.fecha_inicio %}{{ asignacion.fecha_inicio|date:'Y-m-d' }}{% endif %}" required>
+
+        <label for="fecha_fin">Fecha fin</label>
+        <input type="date" name="fecha_fin" id="fecha_fin"
+               value="{% if asignacion.fecha_fin %}{{ asignacion.fecha_fin|date:'Y-m-d' }}{% endif %}" required>
+
+        <label for="pos_inicio">Posición inicial</label>
+        <input type="number" name="pos_inicio" id="pos_inicio" min="0"
+               value="{% if asignacion.pos_inicio is not None %}{{ asignacion.pos_inicio }}{% endif %}" required>
+
+        <label for="pos_fin">Posición final</label>
+        <input type="number" name="pos_fin" id="pos_fin" min="0"
+               value="{% if asignacion.pos_fin is not None %}{{ asignacion.pos_fin }}{% endif %}" required>
+
+        <div style="margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{% url 'asignacion_list' %}" class="btn btn-default">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
