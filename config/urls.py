@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include,path
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,5 +25,7 @@ urlpatterns = [
     path('embarcaciones/', include('apps.embarcaciones.urls')),
     path('muelles/', include('apps.muelles.urls')),
     path('solicitudes/', include('apps.solicitudes.urls')),
-    path('', include('apps.solicitudes.urls')),
+    # Ruta raíz -> redirige al listado de solicitudes por ahora
+    # Cuando tengamos una dashboard propia, cambiar esto por su view
+    path('', RedirectView.as_view(pattern_name='solicitud_list', permanent=False)),
 ]

@@ -1,7 +1,7 @@
-from django.db import models
+from django.db              import models
 from django.core.exceptions import ValidationError
+from django.utils           import timezone
 from apps.embarcaciones.models import Embarcacion
-
 
 class Solicitud(models.Model):
     ESTADOS = [
@@ -21,12 +21,22 @@ class Solicitud(models.Model):
     fecha_salida = models.DateField()
     comentario = models.CharField(max_length=200, blank=True, null=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default="PENDIENTE")
+    
+    class Meta:
+        db_table            = 'solicitud'
+        verbose_name        = 'Solicitud'
+        verbose_name_plural = 'Solicitudes'
+        ordering            = ['-fecha_solicitud']
 
     def clean(self):
-        if self.fecha_llegada < self.fecha_solicitud:
-            raise ValidationError("La fecha de llegada no puede ser anterior a la fecha de solicitud.")
-        if self.fecha_salida <= self.fecha_llegada:
-            raise ValidationError("La fecha de salida debe ser posterior a la fecha de llegada.")
+        # fecha_solicitud tiene auto_now_add — en objetos nuevos es None durante clean()
+        # usamos today como referencia segura
+        today = timezone.now().date()
+
+        if self.fecha_llegada and self.fecha_llegada < today:
+            raise ValidationError('La fecha de llegada no puede ser anterior a hoy.')
+        if self.fecha_llegada and self.fecha_salida and self.fecha_salida <= self.fecha_llegada:
+            raise ValidationError('La fecha de salida debe ser posterior a la de llegada.')
 
         if self.pk:
             anterior = Solicitud.objects.get(pk=self.pk)
@@ -43,28 +53,26 @@ class Solicitud(models.Model):
 
     def save(self, *args, **kwargs):
         estado_anterior = None
+        es_nuevo        = self.pk is None
 
-        if self.pk:
-            anterior = Solicitud.objects.get(pk=self.pk)
+        if not es_nuevo:
+            anterior        = Solicitud.objects.get(pk=self.pk)
             estado_anterior = anterior.estado
-
-        es_nuevo = self.pk is None
 
         super().save(*args, **kwargs)
 
-        from .models import SolicitudHistorial
-
+         # SolicitudHistorial está en el mismo archivo — sin import
         if es_nuevo:
             SolicitudHistorial.objects.create(
                 solicitud=self,
                 estado_anterior=None,
-                estado_nuevo=self.estado
+                estado_nuevo=self.estado,
             )
         elif estado_anterior != self.estado:
             SolicitudHistorial.objects.create(
                 solicitud=self,
                 estado_anterior=estado_anterior,
-                estado_nuevo=self.estado
+                estado_nuevo=self.estado,
             )
 
     def __str__(self):
@@ -81,8 +89,10 @@ class SolicitudHistorial(models.Model):
     fecha_cambio = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Historial de solicitud"
-        verbose_name_plural = "Historial de solicitudes"
+        db_table            = 'solicitud_historial'
+        verbose_name        = 'Historial de solicitud'
+        verbose_name_plural = 'Historial de solicitudes'
+        ordering            = ['-fecha_cambio']
 
     def __str__(self):
         return f"Solicitud {self.solicitud.id}: {self.estado_anterior} -> {self.estado_nuevo}"

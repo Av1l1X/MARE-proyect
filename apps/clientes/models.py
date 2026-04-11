@@ -6,8 +6,11 @@ class Cliente(models.Model):
     telefono = models.CharField(max_length=15)
 
     class Meta:
-        verbose_name = "Cliente"
-        verbose_name_plural = "Clientes"
+        db_table            = 'clientes'          # ← nombre limpio en BD
+
+        verbose_name        = 'Cliente'
+        verbose_name_plural = 'Clientes'
+        ordering            = ['fullname']
 
     def __str__(self):
         return self.fullname

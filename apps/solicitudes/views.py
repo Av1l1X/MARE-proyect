@@ -1,12 +1,14 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST  
 
 from apps.embarcaciones.models import Embarcacion
 from .models import Solicitud
 
-
+@login_required
 def solicitud_list(request):
     solicitudes = Solicitud.objects.select_related(
         "embarcacion",
@@ -23,7 +25,7 @@ def solicitud_list(request):
 
     try:
         page_obj = paginator.page(numero_pagina)
-    except:
+    except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(1)
 
     query_params = ""
@@ -39,28 +41,26 @@ def solicitud_list(request):
     }
     return render(request, "solicitudes/solicitud_list.html", context)
 
-
+@login_required
 def solicitud_detail(request, pk):
     solicitud = get_object_or_404(
         Solicitud.objects.select_related(
-            "embarcacion",
             "embarcacion__cliente",
             "embarcacion__tipo_barco",
         ),
         pk=pk
     )
 
-    historial = solicitud.historial.all().order_by("-fecha_cambio")
-    asignaciones = solicitud.asignaciones.select_related("muelle", "administrador").all().order_by("-fecha_inicio")
+    return render(request, 'solicitudes/solicitud_detail.html', {
+        'solicitud':   solicitud,
+        'historial':   solicitud.historial.order_by('-fecha_cambio'),
+        'asignaciones': solicitud.asignaciones.select_related(
+            'muelle', 'administrador__user'  # ← administrador__user no solo administrador
+        ).order_by('-fecha_inicio'),
 
-    context = {
-        "solicitud": solicitud,
-        "historial": historial,
-        "asignaciones": asignaciones,
-    }
-    return render(request, "solicitudes/solicitud_detail.html", context)
+    })
 
-
+@login_required
 def solicitud_create(request):
     embarcaciones = Embarcacion.objects.select_related("cliente", "tipo_barco").all().order_by("nombre_bote")
     context = {
@@ -68,19 +68,13 @@ def solicitud_create(request):
         "estados": Solicitud.ESTADOS,
     }
 
-    if request.method == "POST":
-        embarcacion_id = request.POST.get("embarcacion")
-        fecha_llegada = request.POST.get("fecha_llegada")
-        fecha_salida = request.POST.get("fecha_salida")
-        comentario = request.POST.get("comentario", "").strip()
-        estado = request.POST.get("estado") or "PENDIENTE"
-
+    if request.method == 'POST':
         solicitud = Solicitud(
-            embarcacion_id=embarcacion_id,
-            fecha_llegada=fecha_llegada,
-            fecha_salida=fecha_salida,
-            comentario=comentario,
-            estado=estado,
+            embarcacion_id = request.POST.get('embarcacion'),
+            fecha_llegada  = request.POST.get('fecha_llegada'),
+            fecha_salida   = request.POST.get('fecha_salida'),
+            comentario     = request.POST.get('comentario', '').strip(),
+            estado         = request.POST.get('estado') or 'PENDIENTE',
         )
 
         try:
@@ -94,7 +88,7 @@ def solicitud_create(request):
 
     return render(request, "solicitudes/solicitud_form.html", context)
 
-
+@login_required
 def solicitud_update(request, pk):
     solicitud = get_object_or_404(Solicitud, pk=pk)
     embarcaciones = Embarcacion.objects.select_related("cliente", "tipo_barco").all().order_by("nombre_bote")
@@ -122,7 +116,7 @@ def solicitud_update(request, pk):
 
     return render(request, "solicitudes/solicitud_form.html", context)
 
-
+@login_required
 def solicitud_delete(request, pk):
     solicitud = get_object_or_404(Solicitud, pk=pk)
 
@@ -135,11 +129,13 @@ def solicitud_delete(request, pk):
         "solicitud": solicitud
     })
 
-
+@login_required
+@require_POST
 def solicitud_cambiar_estado(request, pk, nuevo_estado):
     solicitud = get_object_or_404(Solicitud, pk=pk)
 
     estados_validos = [estado[0] for estado in Solicitud.ESTADOS]
+    
     if nuevo_estado not in estados_validos:
         messages.error(request, "Estado no válido.")
         return redirect("solicitud_detail", pk=pk)
@@ -149,12 +145,9 @@ def solicitud_cambiar_estado(request, pk, nuevo_estado):
     try:
         solicitud.full_clean()
         solicitud.save()
-        messages.success(request, f"La solicitud cambió a estado {nuevo_estado}.")
+        messages.success(request, f'Solicitud actualizada a {solicitud.get_estado_display()}.')
     except ValidationError as exc:
-        if hasattr(exc, "messages"):
-            for error in exc.messages:
-                messages.error(request, error)
-        else:
-            messages.error(request, "No fue posible cambiar el estado.")
+      for error in (exc.messages if hasattr(exc, 'messages') else [str(exc)]):
+            messages.error(request, error)
 
     return redirect("solicitud_detail", pk=pk)
