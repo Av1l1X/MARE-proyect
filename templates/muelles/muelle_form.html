@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{% if muelle.pk %}Editar{% else %}Nuevo{% endif %} Muelle — MARE{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+  <h2>{% if muelle.pk %}Editar muelle{% else %}Nuevo muelle{% endif %}</h2>
+  <a href="{% url 'muelle_list' %}" class="btn btn-default">← Volver</a>
+</div>
+
+{% if errors %}
+<div class="errors-box">
+  {% if errors is iterable and errors|length %}
+    {% for error in errors %}<p style="margin:0 0 4px">{{ error }}</p>{% endfor %}
+  {% else %}
+    {% for field, errs in errors.items %}
+      {% for e in errs %}<p style="margin:0 0 4px"><strong>{{ field }}:</strong> {{ e }}</p>{% endfor %}
+    {% endfor %}
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card" style="max-width:600px">
+  <form method="post">
+    {% csrf_token %}
+
+    <label>Nombre del muelle</label>
+    <input type="text" name="nombre" value="{{ muelle.nombre|default:'' }}" required placeholder="Ej: Dock G">
+
+    <label>Tamaño máximo (metros)</label>
+    <input type="number" name="tam_maximo" value="{{ muelle.tam_maximo|default:'' }}" step="0.01" min="0.01" required placeholder="Ej: 25.00">
+
+    <label>Total de espacios</label>
+    <input type="number" name="total_espacios" value="{{ muelle.total_espacios|default:'' }}" min="1" required placeholder="Ej: 33">
+
+    <label>Coordenada X (posición visual en el mapa)</label>
+    <input type="number" name="coordenada_x" value="{{ muelle.coordenada_x|default:'0' }}" step="0.000001">
+
+    <label>Coordenada Y (posición visual en el mapa)</label>
+    <input type="number" name="coordenada_y" value="{{ muelle.coordenada_y|default:'0' }}" step="0.000001">
+
+    <label style="display:flex;align-items:center;gap:8px;margin-top:1rem;font-weight:normal">
+      <input type="checkbox" name="estado" style="width:auto"
+        {% if muelle.pk and muelle.estado %}checked{% endif %}
+        {% if not muelle.pk %}checked{% endif %}>
+      Muelle activo
+    </label>
+
+    <div style="margin-top:1.5rem">
+      <button type="submit" class="btn btn-primary">
+        {% if muelle.pk %}Guardar cambios{% else %}Crear muelle{% endif %}
+      </button>
+      <a href="{% url 'muelle_list' %}" class="btn btn-default">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Eliminar muelle — MARE{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:500px">
+  <h2 style="color:#dc3545">Eliminar muelle</h2>
+  <p>¿Estás seguro de que deseas eliminar el muelle <strong>{{ muelle.nombre }}</strong>?</p>
+  <p style="color:#6c757d;font-size:14px">Esta acción no se puede deshacer. Si el muelle tiene asignaciones activas, no podrá eliminarse.</p>
+  <form method="post" style="margin-top:1rem">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    <a href="{% url 'muelle_detail' muelle.pk %}" class="btn btn-default">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
