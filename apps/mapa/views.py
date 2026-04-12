@@ -5,19 +5,37 @@ from django.utils.dateparse import parse_date
 from apps.muelles.models import Muelle, Espacio, EtiquetaMuelle, ZonaTierra
 from apps.asignaciones.models import Asignacion
 from apps.solicitudes.models import Solicitud
+from django.utils import timezone
+
+
 
 
 @login_required
 def mapa_view(request):
-    return render(request, 'mapa/mapa.html')
-
+    solicitud_id = request.GET.get('solicitud_id')
+    ctx = {}
+    if solicitud_id:
+        try:
+            from apps.solicitudes.models import Solicitud
+            sol = Solicitud.objects.select_related(
+                'embarcacion__cliente'
+            ).get(pk=solicitud_id)
+            ctx['solicitud_ctx'] = {
+                'id':            sol.pk,
+                'label':         f'{sol.embarcacion.nombre_bote} — {sol.embarcacion.cliente.fullname}',
+                'embarcacion':   sol.embarcacion.nombre_bote,
+                'fecha_llegada': str(sol.fecha_llegada),
+                'fecha_salida':  str(sol.fecha_salida),
+            }
+        except:
+            pass
+    return render(request, 'mapa/mapa.html', ctx)
 
 @login_required
 def disponibilidad_json(request):
-    fecha_str = request.GET.get('fecha')
+    fecha_str    = request.GET.get('fecha')
     solicitud_id = request.GET.get('solicitud_id')
-
-    fecha = parse_date(fecha_str) if fecha_str else None
+    fecha        = parse_date(fecha_str) if fecha_str else None
 
     # Espacios ocupados en esa fecha
     ocupados = set()
@@ -25,6 +43,7 @@ def disponibilidad_json(request):
         asignaciones = Asignacion.objects.filter(
             fecha_inicio__lte=fecha,
             fecha_fin__gte=fecha,
+            activa=True, 
         ).prefetch_related('espacios')
         for a in asignaciones:
             for e in a.espacios.all():
@@ -45,25 +64,19 @@ def disponibilidad_json(request):
     # Construir respuesta de espacios
     espacios_data = []
     for e in Espacio.objects.select_related('muelle').all():
-        # Calcular estado
         if e.id in ocupados:
             estado = 'ocupado'
         elif eslora and manga:
-            # 1px = 10cm → metros = px / 10
             largo_m = float(e.alto)  / 10
             ancho_m = float(e.ancho) / 10
-            cabe = largo_m >= eslora and ancho_m >= manga
+            cabe    = largo_m >= eslora and ancho_m >= manga
             if not cabe:
                 estado = 'no_cabe'
             else:
                 sobra_largo = largo_m - eslora
                 sobra_ancho = ancho_m - manga
-                porcentaje_sobrante = ((sobra_largo * sobra_ancho) /
-                                       (largo_m * ancho_m)) * 100
-                if porcentaje_sobrante <= 30:
-                    estado = 'ideal'
-                else:
-                    estado = 'posible'
+                pct = ((sobra_largo * sobra_ancho) / (largo_m * ancho_m)) * 100
+                estado = 'ideal' if pct <= 30 else 'posible'
         else:
             estado = 'libre'
 
@@ -81,10 +94,7 @@ def disponibilidad_json(request):
             'estado':     estado,
         })
 
-    # Zonas de tierra
-    zonas = list(ZonaTierra.objects.values('id','puntos','color','nombre'))
-
-    # Etiquetas
+    zonas     = list(ZonaTierra.objects.values('id','puntos','color','nombre'))
     etiquetas = list(EtiquetaMuelle.objects.values(
         'id','muelle_id','pos_x','pos_y','texto','tamanio','color'
     ))
@@ -97,7 +107,6 @@ def disponibilidad_json(request):
         'eslora':    eslora,
         'manga':     manga,
     })
-
 
 @login_required
 def asignar_espacio(request):
@@ -128,15 +137,25 @@ def asignar_espacio(request):
         muelle    = espacios.first().muelle
 
         with transaction.atomic():
+            # desactivar asignaciones anteriores (no borrar — son historial)
+            Asignacion.objects.filter(
+                solicitud=solicitud,
+                activa=True
+            ).update(activa=False)
+
             asignacion = Asignacion.objects.create(
                 solicitud     = solicitud,
                 muelle        = muelle,
                 administrador = administrador,
                 fecha_inicio  = fecha_inicio,
                 fecha_fin     = fecha_fin,
+                activa        = True,
             )
             asignacion.espacios.set(espacios)
             asignacion.validar_traslape_espacios()
+
+            solicitud.estado = 'APROBADA'
+            solicitud.save()
 
         return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})
 

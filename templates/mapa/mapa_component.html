@@ -405,24 +405,31 @@ async function cargarMapa(){
 
 // ── CARGAR SOLICITUDES PENDIENTES ─────────────────────────
 async function cargarSolicitudes(){
-  try{
-    const res =await fetch('/solicitudes/?estado=ACTIVA&format=json');
-  } catch(e){}
-  // Las solicitudes las cargamos via Django template o contexto
-  // Si viene MAPA_CTX.solicitud_id lo preseleccionamos
-  if(window.MAPA_CTX.solicitud_id){
-    const sel=document.getElementById('mapa-solicitud');
+  if(window.MAPA_CTX && window.MAPA_CTX.solicitud_id){
+    const sel = document.getElementById('mapa-solicitud');
+    
     // agregar opción si no existe
     if(!sel.querySelector(`option[value="${window.MAPA_CTX.solicitud_id}"]`)){
-      const opt=document.createElement('option');
-      opt.value=window.MAPA_CTX.solicitud_id;
-      opt.textContent=window.MAPA_CTX.solicitud_label||'Solicitud #'+window.MAPA_CTX.solicitud_id;
-      opt.dataset.embarcacion=window.MAPA_CTX.embarcacion||'';
-      opt.dataset.llegada=window.MAPA_CTX.fecha_llegada||'';
-      opt.dataset.salida=window.MAPA_CTX.fecha_salida||'';
+      const opt = document.createElement('option');
+      opt.value = window.MAPA_CTX.solicitud_id;
+      opt.textContent = window.MAPA_CTX.solicitud_label || 'Solicitud #' + window.MAPA_CTX.solicitud_id;
+      opt.dataset.embarcacion = window.MAPA_CTX.embarcacion || '';
+      opt.dataset.llegada     = window.MAPA_CTX.fecha_llegada || '';
+      opt.dataset.salida      = window.MAPA_CTX.fecha_salida  || '';
       sel.appendChild(opt);
     }
-    sel.value=window.MAPA_CTX.solicitud_id;
+
+    // preseleccionar
+    sel.value = window.MAPA_CTX.solicitud_id;
+
+    // actualizar fecha con la de llegada
+    const fechaInput = document.getElementById('mapa-fecha');
+    if(window.MAPA_CTX.fecha_llegada){
+      fechaInput.value = window.MAPA_CTX.fecha_llegada;
+    }
+
+    // disparar búsqueda automáticamente
+    await cargarMapa();
   }
 }
 

@@ -58,14 +58,11 @@
                 <button class="btn btn-danger btn-sm">Rechazar</button>
               </form>
             {% elif sol.estado == 'EN_ESPERA' %}
-              <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'APROBADA' %}" style="display:inline">
-                {% csrf_token %}
-                <button class="btn btn-success btn-sm">Aprobar</button>
-              </form>
-              <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
-                {% csrf_token %}
-                <button class="btn btn-danger btn-sm">Rechazar</button>
-              </form>
+                <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
+                <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
+                  {% csrf_token %}
+                  <button class="btn btn-danger btn-sm">Rechazar</button>
+                </form>
             {% elif sol.estado == 'APROBADA' %}
               <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
             {% endif %}

@@ -6,6 +6,18 @@
   <h2 style="margin:0">Mapa Operativo</h2>
 </div>
 
+{% if solicitud_ctx %}
+<script>
+window.MAPA_CTX = {
+  solicitud_id:   {{ solicitud_ctx.id }},
+  solicitud_label:"{{ solicitud_ctx.label }}",
+  embarcacion:    "{{ solicitud_ctx.embarcacion }}",
+  fecha_llegada:  "{{ solicitud_ctx.fecha_llegada }}",
+  fecha_salida:   "{{ solicitud_ctx.fecha_salida }}",
+};
+</script>
+{% endif %}
+
 {% include 'mapa/mapa_component.html' %}
 
 {% endblock %}

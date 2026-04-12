@@ -197,16 +197,17 @@ def solicitud_cambiar_estado(request, pk, nuevo_estado):
         for error in (exc.messages if hasattr(exc, 'messages') else [str(exc)]):
             messages.error(request, error)
 
-    # redirigir al CRUD correcto según el nuevo estado
     destinos = {
-        'PENDIENTE': 'solicitud_list',
-        'EN_ESPERA': 'solicitud_en_espera_list',
-        'APROBADA':  'solicitud_aprobadas_list',
-        'RECHAZADA': 'solicitud_list',
-        'COMPLETADA':'solicitud_list',
+        'PENDIENTE':  'solicitud_list',
+        'EN_ESPERA':  'solicitud_list',  # ← se queda en solicitudes
+        'APROBADA':   'solicitud_aprobadas_list',
+        'RECHAZADA':  'solicitud_list',
+        'COMPLETADA': 'solicitud_list',
     }
-    return redirect(destinos.get(nuevo_estado, 'solicitud_detail'), pk=pk)
-
+    nombre = destinos.get(nuevo_estado)
+    if nombre in ['solicitud_list', 'solicitud_en_espera_list', 'solicitud_aprobadas_list']:
+        return redirect(nombre)
+    return redirect('solicitud_detail', pk=pk)
 
 
 @login_required

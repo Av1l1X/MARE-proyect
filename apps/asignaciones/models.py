@@ -45,6 +45,8 @@ class Asignacion(models.Model):
         related_name='asignaciones',
         blank=False,
     )
+    
+    activa = models.BooleanField(default=True)
 
 
     class Meta:
