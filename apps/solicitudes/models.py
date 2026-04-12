@@ -5,10 +5,11 @@ from apps.embarcaciones.models import Embarcacion
 
 class Solicitud(models.Model):
     ESTADOS = [
-        ("PENDIENTE", "Pendiente"),
-        ("ACTIVA", "Activa"),
-        ("COMPLETADA", "Completada"),
-        ("CANCELADA", "Cancelada"),
+    ('PENDIENTE',  'Pendiente'),
+    ('EN_ESPERA',  'En espera'),
+    ('APROBADA',   'Aprobada'),
+    ('COMPLETADA', 'Completada'),
+    ('RECHAZADA',  'Rechazada'),
     ]
 
     embarcacion = models.ForeignKey(
@@ -42,14 +43,17 @@ class Solicitud(models.Model):
             anterior = Solicitud.objects.get(pk=self.pk)
 
             if anterior.estado != self.estado:
-                if anterior.estado in ["COMPLETADA", "CANCELADA"]:
-                    raise ValidationError("Una solicitud completada o cancelada no puede cambiar de estado.")
+                if anterior.estado in ['COMPLETADA', 'RECHAZADA']:
+                    raise ValidationError('Una solicitud completada o rechazada no puede cambiar de estado.')
 
-                if anterior.estado == "PENDIENTE" and self.estado not in ["ACTIVA", "CANCELADA"]:
-                    raise ValidationError("Una solicitud pendiente solo puede pasar a activa o cancelada.")
+                if anterior.estado == 'PENDIENTE' and self.estado not in ['EN_ESPERA', 'RECHAZADA']:
+                    raise ValidationError('Pendiente solo puede pasar a En espera o Rechazada.')
 
-                if anterior.estado == "ACTIVA" and self.estado not in ["COMPLETADA", "CANCELADA"]:
-                    raise ValidationError("Una solicitud activa solo puede pasar a completada o cancelada.")
+                if anterior.estado == 'EN_ESPERA' and self.estado not in ['APROBADA', 'RECHAZADA']:
+                    raise ValidationError('En espera solo puede pasar a Aprobada o Rechazada.')
+
+                if anterior.estado == 'APROBADA' and self.estado not in ['COMPLETADA', 'RECHAZADA']:
+                    raise ValidationError('Aprobada solo puede pasar a Completada o Rechazada.')
 
     def save(self, *args, **kwargs):
         estado_anterior = None

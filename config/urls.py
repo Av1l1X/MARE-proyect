@@ -25,6 +25,7 @@ urlpatterns = [
     path('embarcaciones/', include('apps.embarcaciones.urls')),
     path('muelles/', include('apps.muelles.urls')),
     path('solicitudes/', include('apps.solicitudes.urls')),
+    path('mapa/', include('apps.mapa.urls')),
     # Ruta raíz -> redirige al listado de solicitudes por ahora
     # Cuando tengamos una dashboard propia, cambiar esto por su view
     path('', RedirectView.as_view(pattern_name='solicitud_list', permanent=False)),

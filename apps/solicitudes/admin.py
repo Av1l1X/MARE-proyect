@@ -45,9 +45,10 @@ class SolicitudAdmin(admin.ModelAdmin):
     def get_estado_badge(self, obj):
         colores = {
             'PENDIENTE':  ('#FAEEDA', '#633806'),
-            'ACTIVA':     ('#E1F5EE', '#085041'),
-            'COMPLETADA': ('#E6F1FB', '#0C447C'),
-            'CANCELADA':  ('#FCEBEB', '#791F1F'),
+            'EN_ESPERA':  ('#E6F1FB', '#0C447C'),
+            'APROBADA':   ('#E1F5EE', '#085041'),
+            'COMPLETADA': ('#E1F5EE', '#085041'),
+            'RECHAZADA':  ('#FCEBEB', '#791F1F'),
         }
         bg, fg = colores.get(obj.estado, ('#eee', '#333'))
         return format_html(

@@ -720,6 +720,7 @@ document.getElementById('btn-guardar').addEventListener('click',async()=>{
   }
   try{
     await fetch(API_ZONAS_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify({zonas:zonas.map(z=>({puntos:z.puntos,color:z.color,nombre:z.nombre||''}))})});
+    
     for(const [mid,esps] of Object.entries(porMuelle)){
       const res=await fetch(`${API_BASE}${mid}/espacios/guardar/`,{
         method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
@@ -728,28 +729,29 @@ document.getElementById('btn-guardar').addEventListener('click',async()=>{
       const data=await res.json();
       if(!data.ok){ alert(`Error en muelle ${MUELLES[mid]}: ${data.error}`); btn.textContent='Guardar todo'; btn.disabled=false; return; }
     }
+
+    // ← etiquetas aquí adentro
+    const etRes=await fetch(API_ETIQUETAS_GUARDAR,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body:JSON.stringify({
+        etiquetas:etiquetas.map(et=>({
+          muelle_id:et.muelle_id,
+          pos_x:et.pos_x, pos_y:et.pos_y,
+          texto:et.texto, tamanio:et.tamanio, color:et.color,
+        }))
+      })
+    });
+    const etData=await etRes.json();
+    console.log('Etiquetas:', etData);
+
     alert('Marina guardada correctamente.');
     await cargarTodo();
+
   } catch(err){ alert('Error: '+err.message); }
   finally{ btn.textContent='Guardar todo'; btn.disabled=false; }
-
-    // guardar etiquetas
-  await fetch(API_ETIQUETAS_GUARDAR,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-    body:JSON.stringify({
-      etiquetas: etiquetas.map(et=>({
-        muelle_id: et.muelle_id,
-        pos_x:     et.pos_x,
-        pos_y:     et.pos_y,
-        texto:     et.texto,
-        tamanio:   et.tamanio,
-        color:     et.color,
-      }))
-    })
-  });
-
 });
+
 
 // ── CARGAR ────────────────────────────────────────────────
 async function cargarTodo(){

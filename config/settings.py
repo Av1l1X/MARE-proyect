@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'apps.embarcaciones',
     'apps.muelles',
     'apps.solicitudes',
+    'apps.mapa',
 ]
 
 MIDDLEWARE = [
