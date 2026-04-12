@@ -2,22 +2,26 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
-from apps.muelles.models import Muelle, Espacio, EtiquetaMuelle, ZonaTierra
-from apps.asignaciones.models import Asignacion
-from apps.solicitudes.models import Solicitud
 from django.utils import timezone
+from apps.muelles.models import Espacio, EtiquetaMuelle, ZonaTierra
+from apps.asignaciones.models import Asignacion, Administrador
+from apps.solicitudes.models import Solicitud
+
 
 
 @login_required
 def mapa_view(request):
+    from apps.muelles.models import Muelle
+    from apps.embarcaciones.models import TipoBarco
+
     solicitud_id = request.GET.get('solicitud_id')
-    ctx = {}
+    ctx = {
+        'muelles':    Muelle.objects.filter(estado=True).order_by('nombre'),
+        'tipos_barco':TipoBarco.objects.order_by('tipo_barco'),
+    }
     if solicitud_id:
         try:
-            from apps.solicitudes.models import Solicitud
-            sol = Solicitud.objects.select_related(
-                'embarcacion__cliente'
-            ).get(pk=solicitud_id)
+            sol = Solicitud.objects.select_related('embarcacion__cliente').get(pk=solicitud_id)
             ctx['solicitud_ctx'] = {
                 'id':            sol.pk,
                 'label':         f'{sol.embarcacion.nombre_bote} — {sol.embarcacion.cliente.fullname}',
@@ -25,7 +29,7 @@ def mapa_view(request):
                 'fecha_llegada': str(sol.fecha_llegada),
                 'fecha_salida':  str(sol.fecha_salida),
             }
-        except:
+        except Solicitud.DoesNotExist:
             pass
     return render(request, 'mapa/mapa.html', ctx)
 
@@ -33,6 +37,7 @@ def mapa_view(request):
 def disponibilidad_json(request):
     fecha_str    = request.GET.get('fecha')
     solicitud_id = request.GET.get('solicitud_id')
+    espacio_id   = request.GET.get('espacio_id')
     fecha        = parse_date(fecha_str) if fecha_str else None
 
     # Espacios ocupados en esa fecha
@@ -41,7 +46,7 @@ def disponibilidad_json(request):
         asignaciones = Asignacion.objects.filter(
             fecha_inicio__lte=fecha,
             fecha_fin__gte=fecha,
-            activa=True, 
+            activa=True,
         ).prefetch_related('espacios')
         for a in asignaciones:
             for e in a.espacios.all():
@@ -51,9 +56,7 @@ def disponibilidad_json(request):
     eslora = manga = None
     if solicitud_id:
         try:
-            sol = Solicitud.objects.select_related(
-                'embarcacion'
-            ).get(pk=solicitud_id)
+            sol    = Solicitud.objects.select_related('embarcacion').get(pk=solicitud_id)
             eslora = float(sol.embarcacion.eslora)
             manga  = float(sol.embarcacion.manga)
         except Solicitud.DoesNotExist:
@@ -97,14 +100,38 @@ def disponibilidad_json(request):
         'id','muelle_id','pos_x','pos_y','texto','tamanio','color'
     ))
 
+    # Info de asignación activa para el popup de espacio ocupado
+    asignacion_activa = None
+    if espacio_id and fecha:
+        try:
+            a = Asignacion.objects.select_related(
+                'solicitud__embarcacion__cliente'
+            ).get(
+                espacios__id=espacio_id,
+                fecha_inicio__lte=fecha,
+                fecha_fin__gte=fecha,
+                activa=True,
+            )
+            asignacion_activa = {
+                'solicitud_id': a.solicitud_id,
+                'embarcacion':  a.solicitud.embarcacion.nombre_bote,
+                'cliente':      a.solicitud.embarcacion.cliente.fullname,
+                'fecha_inicio': a.fecha_inicio.strftime('%d/%m/%Y'),
+                'fecha_fin':    a.fecha_fin.strftime('%d/%m/%Y'),
+            }
+        except Asignacion.DoesNotExist:
+            pass
+
     return JsonResponse({
-        'espacios':  espacios_data,
-        'zonas':     zonas,
-        'etiquetas': etiquetas,
-        'fecha':     fecha_str,
-        'eslora':    eslora,
-        'manga':     manga,
+        'espacios':         espacios_data,
+        'zonas':            zonas,
+        'etiquetas':        etiquetas,
+        'fecha':            fecha_str,
+        'eslora':           eslora,
+        'manga':            manga,
+        'asignacion_activa':asignacion_activa,
     })
+
 
 @login_required
 def asignar_espacio(request):
@@ -113,12 +140,11 @@ def asignar_espacio(request):
 
     import json
     from django.db import transaction
-    from apps.asignaciones.models import Administrador
 
     try:
         data         = json.loads(request.body)
         solicitud_id = int(data['solicitud_id'])
-        espacio_ids  = data['espacio_ids']   # lista de IDs
+        espacio_ids  = data['espacio_ids']
         fecha_inicio = parse_date(data['fecha_inicio'])
         fecha_fin    = parse_date(data['fecha_fin'])
     except (KeyError, ValueError, TypeError) as e:
@@ -135,7 +161,6 @@ def asignar_espacio(request):
         muelle    = espacios.first().muelle
 
         with transaction.atomic():
-            # desactivar asignaciones anteriores (no borrar — son historial)
             Asignacion.objects.filter(
                 solicitud=solicitud,
                 activa=True
@@ -163,11 +188,6 @@ def asignar_espacio(request):
 
 @login_required
 def inicio(request):
-    from django.utils import timezone
-    from apps.muelles.models import Espacio
-    from apps.solicitudes.models import Solicitud
-    from apps.asignaciones.models import Asignacion
-
     hoy = timezone.now().date()
 
     ocupados = Asignacion.objects.filter(

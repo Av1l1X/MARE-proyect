@@ -7,7 +7,6 @@
     <h2>{{ titulo }}</h2>
     <!-- Tabs de estado -->
   </div>
-  <a href="{% url 'solicitud_create' %}" class="btn btn-primary">+ Nueva solicitud</a>
 </div>
 
 <div class="table-wrap">
@@ -51,7 +50,7 @@
             {% if sol.estado == 'PENDIENTE' %}
               <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'EN_ESPERA' %}" style="display:inline">
                 {% csrf_token %}
-                <button class="btn btn-info btn-sm">En espera</button>
+                <button class="btn btn-success btn-sm">Aprobar</button>
               </form>
               <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
                 {% csrf_token %}

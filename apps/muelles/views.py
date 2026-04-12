@@ -249,3 +249,4 @@ def etiquetas_guardar(request):
         return JsonResponse({'ok': True})
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+    

@@ -32,6 +32,7 @@
 
 </div>
 
+
 <!-- ── MAPA GENERAL ── -->
 <div class="card" style="padding:.75rem">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
@@ -39,144 +40,15 @@
       <span style="font-size:14px;font-weight:600;color:var(--text)">Vista general de la marina</span>
       <span style="font-size:11px;color:var(--text-light);margin-left:.5rem">{{ fecha_hoy }}</span>
     </div>
-    <div style="display:flex;gap:.5rem;align-items:center">
-      <!-- leyenda compacta -->
-      <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
-        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>Ocupado</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>Libre</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>Pasillo</span>
-      </div>
+    <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>Ocupado</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>Libre</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>Pasillo</span>
       <a href="{% url 'mapa' %}" class="btn btn-default btn-sm">Ver mapa completo →</a>
     </div>
   </div>
-
-  <!-- Canvas solo lectura -->
-  <div id="mapa-inicio-container" style="width:100%;height:420px;overflow:hidden;border-radius:6px;background:#a8cfe0;position:relative">
-    <svg id="mapa-inicio-svg" style="position:absolute;top:0;left:0;overflow:visible" width="5500" height="4000">
-      <defs>
-        <pattern id="gi-s" width="10" height="10" patternUnits="userSpaceOnUse">
-          <path d="M10 0L0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3"/>
-        </pattern>
-        <pattern id="gi-l" width="100" height="100" patternUnits="userSpaceOnUse">
-          <rect width="100" height="100" fill="url(#gi-s)"/>
-          <path d="M100 0L0 0 0 100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
-        </pattern>
-      </defs>
-      <rect width="5500" height="4000" fill="#a8cfe0"/>
-      <rect width="5500" height="4000" fill="url(#gi-l)" pointer-events="none"/>
-      <g id="gi-tierra"></g>
-      <g id="gi-espacios"></g>
-      <g id="gi-labels"></g>
-    </svg>
-  </div>
+  <script>window.MAPA_CTX={};</script>
+  {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
 </div>
 
-<script>
-(function(){
-  const API = "{% url 'mapa_disponibilidad' %}?fecha={{ fecha_hoy_iso }}";
-  const svg       = document.getElementById('mapa-inicio-svg');
-  const container = document.getElementById('mapa-inicio-container');
-  const layerT    = document.getElementById('gi-tierra');
-  const layerE    = document.getElementById('gi-espacios');
-  const layerL    = document.getElementById('gi-labels');
-
-  let vx=0, vy=0, vscale=1;
-  let panning=false, panStart=null, panOrigin=null;
-
-  // zoom
-  container.addEventListener('wheel', ev=>{
-    ev.preventDefault();
-    const rect=container.getBoundingClientRect();
-    const mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
-    const delta=ev.deltaY>0?0.9:1.1;
-    const ns=Math.min(4,Math.max(0.05,vscale*delta));
-    vx=mx-(mx-vx)*(ns/vscale); vy=my-(my-vy)*(ns/vscale); vscale=ns;
-    svg.style.transform=`translate(${vx}px,${vy}px) scale(${vscale})`;
-    svg.style.transformOrigin='0 0';
-  },{passive:false});
-
-  // pan clic central
-  container.addEventListener('mousedown', ev=>{
-    if(ev.button===1){
-      ev.preventDefault();
-      panning=true; panStart={x:ev.clientX,y:ev.clientY}; panOrigin={x:vx,y:vy};
-      container.style.cursor='grabbing';
-    }
-  });
-  container.addEventListener('mousemove', ev=>{
-    if(panning){ vx=panOrigin.x+(ev.clientX-panStart.x); vy=panOrigin.y+(ev.clientY-panStart.y); svg.style.transform=`translate(${vx}px,${vy}px) scale(${vscale})`; svg.style.transformOrigin='0 0'; }
-  });
-  container.addEventListener('mouseup',  ()=>{ panning=false; container.style.cursor='default'; });
-  container.addEventListener('mouseleave',()=>{ panning=false; });
-
-  const COLORES = {
-    ocupado: {fill:'#f87171', stroke:'#dc2626'},
-    libre:   {fill:'#d1d5db', stroke:'#9ca3af'},
-    pasillo: {fill:'#c8a87a', stroke:'#8B6914'},
-  };
-
-  async function cargar(){
-    try{
-      const res  = await fetch(API);
-      const data = await res.json();
-
-      // tierra
-      layerT.innerHTML='';
-      (data.zonas||[]).forEach(z=>{
-        if(!z.puntos) return;
-        const pts = typeof z.puntos==='string' ? JSON.parse(z.puntos) : z.puntos;
-        const el  = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-        el.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
-        el.setAttribute('fill', z.color||'#7ab648');
-        el.setAttribute('stroke','#4a8020'); el.setAttribute('stroke-width','1');
-        layerT.appendChild(el);
-      });
-
-      // espacios
-      layerE.innerHTML='';
-      (data.espacios||[]).forEach(e=>{
-        const estado = e.es_pasillo ? 'pasillo' : (e.estado==='ocupado' ? 'ocupado' : 'libre');
-        const col    = COLORES[estado];
-        const rot    = e.rotacion||0;
-        const cx     = e.pos_x + e.ancho/2;
-        const cy     = e.pos_y + e.alto/2;
-
-        const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-        g.setAttribute('transform', `rotate(${rot},${cx},${cy})`);
-
-        const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
-        r.setAttribute('x', e.pos_x); r.setAttribute('y', e.pos_y);
-        r.setAttribute('width', e.ancho); r.setAttribute('height', e.alto);
-        r.setAttribute('rx','2');
-        r.setAttribute('fill', col.fill); r.setAttribute('stroke', col.stroke);
-        r.setAttribute('stroke-width','0.8');
-
-        g.appendChild(r);
-        layerE.appendChild(g);
-      });
-
-      // etiquetas
-      layerL.innerHTML='';
-      (data.etiquetas||[]).forEach(et=>{
-        const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-        t.setAttribute('x', et.pos_x); t.setAttribute('y', et.pos_y);
-        t.setAttribute('font-size', et.tamanio||14);
-        t.setAttribute('font-weight','600');
-        t.setAttribute('fill', et.color||'#ffffff');
-        t.setAttribute('font-family','DM Sans, sans-serif');
-        t.setAttribute('paint-order','stroke');
-        t.setAttribute('stroke','rgba(0,0,0,0.4)');
-        t.setAttribute('stroke-width','3');
-        t.setAttribute('stroke-linejoin','round');
-        t.setAttribute('pointer-events','none');
-        t.textContent = et.texto||'';
-        layerL.appendChild(t);
-      });
-
-    } catch(err){ console.error('Error cargando mapa inicio:', err); }
-  }
-
-  cargar();
-})();
-</script>
 {% endblock %}

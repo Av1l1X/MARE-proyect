@@ -114,54 +114,53 @@ def solicitud_detail(request, pk):
         ).prefetch_related('espacios').order_by('-fecha_inicio'),
     })
 
-
-@login_required
-def solicitud_create(request):
-    embarcaciones = Embarcacion.objects.select_related(
-        'cliente', 'tipo_barco'
-    ).order_by('nombre_bote')
-    context = {'embarcaciones': embarcaciones}
-
-    if request.method == 'POST':
-        solicitud = Solicitud(
-            embarcacion_id = request.POST.get('embarcacion'),
-            fecha_llegada  = request.POST.get('fecha_llegada'),
-            fecha_salida   = request.POST.get('fecha_salida'),
-            comentario     = request.POST.get('comentario', '').strip(),
-            estado         = 'PENDIENTE',
-        )
-        try:
-            solicitud.full_clean()
-            solicitud.save()
-            messages.success(request, 'Solicitud creada correctamente.')
-            return redirect('solicitud_list')
-        except ValidationError as exc:
-            context['errors']    = exc.message_dict if hasattr(exc, 'message_dict') else exc.messages
-            context['solicitud'] = solicitud
-
-    return render(request, 'solicitudes/solicitud_form.html', context)
-
-
 @login_required
 def solicitud_update(request, pk):
-    solicitud     = get_object_or_404(Solicitud, pk=pk)
-    embarcaciones = Embarcacion.objects.select_related(
-        'cliente', 'tipo_barco'
-    ).order_by('nombre_bote')
-    context = {'solicitud': solicitud, 'embarcaciones': embarcaciones}
+    from apps.embarcaciones.models import TipoBarco
+    solicitud   = get_object_or_404(
+        Solicitud.objects.select_related('embarcacion__cliente','embarcacion__tipo_barco'),
+        pk=pk
+    )
+    tipos_barco = TipoBarco.objects.order_by('tipo_barco')
+    context     = {'solicitud': solicitud, 'tipos_barco': tipos_barco}
 
     if request.method == 'POST':
-        solicitud.embarcacion_id = request.POST.get('embarcacion')
-        solicitud.fecha_llegada  = request.POST.get('fecha_llegada')
-        solicitud.fecha_salida   = request.POST.get('fecha_salida')
-        solicitud.comentario     = request.POST.get('comentario', '').strip()
         try:
-            solicitud.full_clean()
-            solicitud.save()
+            from django.db import transaction
+            with transaction.atomic():
+                # actualizar cliente
+                cliente          = solicitud.embarcacion.cliente
+                cliente.fullname = request.POST.get('cliente_fullname','').strip()
+                cliente.email    = request.POST.get('cliente_email','').strip().lower()
+                cliente.telefono = request.POST.get('cliente_telefono','').strip()
+                cliente.full_clean()
+                cliente.save()
+
+                # actualizar embarcación
+                emb              = solicitud.embarcacion
+                emb.nombre_bote  = request.POST.get('nombre_bote','').strip()
+                emb.tipo_barco_id= request.POST.get('tipo_barco')
+                emb.eslora       = request.POST.get('eslora')
+                emb.manga        = request.POST.get('manga')
+                emb.calado       = request.POST.get('calado')
+                emb.full_clean()
+                emb.save()
+
+                # actualizar solicitud
+                solicitud.fecha_llegada          = request.POST.get('fecha_llegada')
+                solicitud.fecha_salida           = request.POST.get('fecha_salida')
+                solicitud.comentario             = request.POST.get('comentario','').strip()
+                solicitud.primera_entrada_mexico = request.POST.get('primera_entrada_mexico') == 'on'
+                solicitud.full_clean()
+                solicitud.save()
+
             messages.success(request, 'Solicitud actualizada correctamente.')
             return redirect('solicitud_detail', pk=solicitud.pk)
+
         except ValidationError as exc:
-            context['errors'] = exc.message_dict if hasattr(exc, 'message_dict') else exc.messages
+            context['errors'] = exc.message_dict if hasattr(exc,'message_dict') else exc.messages
+        except Exception as exc:
+            context['errors'] = [str(exc)]
 
     return render(request, 'solicitudes/solicitud_form.html', context)
 
