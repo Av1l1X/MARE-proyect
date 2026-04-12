@@ -1,92 +1,128 @@
 {% extends "base.html" %}
-
-{% block title %}Detalle de solicitud{% endblock %}
+{% block title %}Solicitud #{{ solicitud.pk }} — MARE{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-        <h2>Solicitud #{{ solicitud.id }}</h2>
-        <div>
-            <a href="{% url 'solicitud_update' solicitud.id %}" class="btn btn-secondary">Editar</a>
-            <a href="{% url 'solicitud_delete' solicitud.id %}" class="btn btn-danger">Eliminar</a>
-            <a href="{% url 'solicitud_list' %}" class="btn btn-default">Volver</a>
-        </div>
+<div class="page-header">
+  <h2>Solicitud #{{ solicitud.pk }}</h2>
+  <div style="display:flex;gap:.4rem">
+    {% if solicitud.estado == 'PENDIENTE' %}
+      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'EN_ESPERA' %}">
+        {% csrf_token %}<button class="btn btn-info btn-sm">Poner en espera</button>
+      </form>
+      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
+        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
+      </form>
+    {% elif solicitud.estado == 'EN_ESPERA' %}
+      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'APROBADA' %}">
+        {% csrf_token %}<button class="btn btn-success btn-sm">Aprobar</button>
+      </form>
+      <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar en mapa</a>
+      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
+        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
+      </form>
+    {% elif solicitud.estado == 'APROBADA' %}
+      <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
+      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
+        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
+      </form>
+    {% endif %}
+    <a href="{% url 'solicitud_update' solicitud.pk %}" class="btn btn-default btn-sm">Editar</a>
+    <a href="{% url 'solicitud_delete' solicitud.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+    <a href="{% url 'solicitud_list' %}" class="btn btn-default btn-sm">← Volver</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+
+  <!-- Info general -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Información general</span>
+      {% if solicitud.estado == 'PENDIENTE' %}
+        <span class="badge badge-warning">Pendiente</span>
+      {% elif solicitud.estado == 'EN_ESPERA' %}
+        <span class="badge badge-info">En espera</span>
+      {% elif solicitud.estado == 'APROBADA' %}
+        <span class="badge badge-success">Aprobada</span>
+      {% elif solicitud.estado == 'COMPLETADA' %}
+        <span class="badge badge-neutral">Completada</span>
+      {% elif solicitud.estado == 'RECHAZADA' %}
+        <span class="badge badge-danger">Rechazada</span>
+      {% endif %}
     </div>
+    <table style="font-size:13px">
+      <tr><td style="color:var(--text-mid);padding:.4rem 0;width:140px">Fecha solicitud</td><td>{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Fecha llegada</td><td>{{ solicitud.fecha_llegada|date:"d/m/Y" }}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Fecha salida</td><td>{{ solicitud.fecha_salida|date:"d/m/Y" }}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Comentario</td><td>{{ solicitud.comentario|default:"—" }}</td></tr>
+    </table>
+  </div>
 
-    <p><strong>Embarcación:</strong> {{ solicitud.embarcacion.nombre_bote }}</p>
-    <p><strong>Cliente:</strong> {{ solicitud.embarcacion.cliente.fullname }}</p>
-    <p><strong>Tipo de barco:</strong> {{ solicitud.embarcacion.tipo_barco.tipo_barco }}</p>
-    <p><strong>Fecha solicitud:</strong> {{ solicitud.fecha_solicitud }}</p>
-    <p><strong>Fecha llegada:</strong> {{ solicitud.fecha_llegada }}</p>
-    <p><strong>Fecha salida:</strong> {{ solicitud.fecha_salida }}</p>
-    <p><strong>Estado:</strong> {{ solicitud.estado }}</p>
-    <p><strong>Comentario:</strong> {{ solicitud.comentario|default:"Sin comentario" }}</p>
-</div>
-
-<div class="card">
-    <h3>Cambiar estado</h3>
-    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'ACTIVA' %}" class="btn btn-success">Marcar activa</a>
-    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'COMPLETADA' %}" class="btn btn-primary">Marcar completada</a>
-    <a href="{% url 'solicitud_cambiar_estado' solicitud.id 'CANCELADA' %}" class="btn btn-warning">Cancelar</a>
-</div>
-
-<div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>Asignaciones</h3>
-        <a href="{% url 'asignacion_create' %}" class="btn btn-primary">Nueva asignación</a>
+  <!-- Embarcación -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Embarcación</span>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Muelle</th>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Posición</th>
-                <th>Administrador</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for asignacion in asignaciones %}
-            <tr>
-                <td>{{ asignacion.muelle.nombre }}</td>
-                <td>{{ asignacion.fecha_inicio }}</td>
-                <td>{{ asignacion.fecha_fin }}</td>
-                <td>{{ asignacion.pos_inicio }} - {{ asignacion.pos_fin }}</td>
-                <td>{{ asignacion.administrador.username }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No hay asignaciones registradas para esta solicitud.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    <table style="font-size:13px">
+      <tr><td style="color:var(--text-mid);padding:.4rem 0;width:140px">Nombre</td><td><strong>{{ solicitud.embarcacion.nombre_bote }}</strong></td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Cliente</td><td>{{ solicitud.embarcacion.cliente.fullname }}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Tipo</td><td>{{ solicitud.embarcacion.tipo_barco.tipo_barco }}</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Eslora</td><td>{{ solicitud.embarcacion.eslora }} m</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Manga</td><td>{{ solicitud.embarcacion.manga }} m</td></tr>
+      <tr><td style="color:var(--text-mid);padding:.4rem 0">Calado</td><td>{{ solicitud.embarcacion.calado }} m</td></tr>
     </table>
+  </div>
 </div>
 
-<div class="card">
-    <h3>Historial de estados</h3>
+<!-- Asignaciones -->
+<div class="card" style="margin-top:.75rem">
+  <div class="card-header">
+    <span class="card-title">Asignaciones</span>
+  </div>
+  <div class="table-wrap">
     <table>
-        <thead>
-            <tr>
-                <th>Estado anterior</th>
-                <th>Estado nuevo</th>
-                <th>Fecha de cambio</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in historial %}
-            <tr>
-                <td>{{ item.estado_anterior|default:"Inicial" }}</td>
-                <td>{{ item.estado_nuevo }}</td>
-                <td>{{ item.fecha_cambio }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3">No hay historial registrado.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+      <thead>
+        <tr><th>Muelle</th><th>Espacios</th><th>Inicio</th><th>Fin</th><th>Administrador</th></tr>
+      </thead>
+      <tbody>
+        {% for a in asignaciones %}
+        <tr>
+          <td>{{ a.muelle.nombre }}</td>
+          <td>{% for e in a.espacios.all %}{{ e.numero }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+          <td>{{ a.fecha_inicio|date:"d/m/Y" }}</td>
+          <td>{{ a.fecha_fin|date:"d/m/Y" }}</td>
+          <td>{{ a.administrador }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;color:var(--text-light)">Sin asignaciones</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Historial -->
+<div class="card" style="margin-top:.75rem">
+  <div class="card-header">
+    <span class="card-title">Historial de estados</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Estado anterior</th><th>Estado nuevo</th><th>Fecha</th></tr>
+      </thead>
+      <tbody>
+        {% for h in historial %}
+        <tr>
+          <td>{{ h.estado_anterior|default:"—" }}</td>
+          <td>{{ h.estado_nuevo }}</td>
+          <td>{{ h.fecha_cambio|date:"d/m/Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" style="text-align:center;color:var(--text-light)">Sin historial</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

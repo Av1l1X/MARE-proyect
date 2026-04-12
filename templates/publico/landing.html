@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marina</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --purple:#534781;
+      --purple-dark:#3d3460;
+      --gold:#c9b157;
+      --gold-light:#dcc97a;
+      --white:#ffffff;
+      --light:#ecf0f3;
+      --radius:8px;--radius-lg:12px;
+      --shadow:0 4px 24px rgba(83,71,129,0.15);
+      --text:#1a1a2e;--text-mid:#4a4a6a;--text-light:#8a8aaa;
+      --border:#dde0ea;
+      --danger:#c0392b;--danger-bg:#fdf0ee;
+      --success:#1a7a4a;--success-bg:#e6f4ec;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);min-height:100vh;background:var(--light)}
+
+    /* ── PÁGINA EN BLANCO ── */
+    main{min-height:100vh;background:var(--light)}
+
+    /* ── BOTÓN FLOTANTE DERECHA ── */
+    .fab{
+      position:fixed;
+      right:1.5rem;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:200;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:.5rem;
+    }
+    .fab-btn{
+      width:56px;height:56px;
+      border-radius:50%;
+      background:var(--purple);
+      color:var(--white);
+      border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 20px rgba(83,71,129,0.4);
+      transition:all .2s;
+    }
+    .fab-btn:hover{background:var(--purple-dark);transform:scale(1.08)}
+    .fab-btn svg{width:22px;height:22px}
+    .fab-label{
+      background:var(--purple);
+      color:var(--gold);
+      font-size:10px;font-weight:600;
+      letter-spacing:.5px;
+      padding:.3rem .7rem;
+      border-radius:20px;
+      white-space:nowrap;
+      border:1px solid rgba(201,177,87,0.3);
+    }
+
+    /* ── POPUP ── */
+    .popup-overlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,0.55);
+      z-index:300;
+      align-items:center;
+      justify-content:flex-end;
+      padding:1rem 5rem 1rem 1rem;
+    }
+    .popup-overlay.active{display:flex}
+
+    .popup{
+      background:var(--white);
+      border-radius:var(--radius-lg);
+      width:460px;max-width:95vw;
+      max-height:90vh;overflow-y:auto;
+      box-shadow:var(--shadow);
+      display:flex;flex-direction:column;
+    }
+
+    .popup-header{
+      background:var(--purple);
+      padding:1.25rem 1.5rem;
+      display:flex;align-items:center;justify-content:space-between;
+      border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+      flex-shrink:0;
+    }
+    .popup-header h2{font-size:15px;font-weight:600;color:var(--white)}
+    .popup-header p{font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px}
+    .popup-close{background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:20px;padding:.25rem;line-height:1}
+    .popup-close:hover{color:var(--white)}
+
+    .popup-body{padding:1.25rem 1.5rem;flex:1}
+    .popup-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0}
+
+    .section-label{
+      font-size:11px;font-weight:600;color:var(--text-mid);
+      text-transform:uppercase;letter-spacing:.5px;
+      margin:1rem 0 .6rem;padding-bottom:.4rem;
+      border-bottom:2px solid var(--gold);
+      display:flex;align-items:center;gap:6px;
+    }
+    .section-label:first-child{margin-top:0}
+    .section-label::before{
+      content:'';display:inline-block;
+      width:3px;height:14px;
+      background:var(--purple);border-radius:2px;
+    }
+
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+    .form-group{margin-bottom:.75rem}
+    .form-group:last-child{margin-bottom:0}
+
+    label{display:block;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem}
+    input,select,textarea{
+      width:100%;padding:.5rem .75rem;
+      border:1px solid var(--border);border-radius:var(--radius);
+      font-family:'DM Sans',sans-serif;font-size:13px;
+      color:var(--text);background:var(--white);
+      outline:none;transition:border-color .15s,box-shadow .15s;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--purple);
+      box-shadow:0 0 0 3px rgba(83,71,129,0.12);
+    }
+    textarea{resize:vertical;min-height:60px}
+    .hint{font-size:11px;color:var(--text-light);margin-top:.2rem}
+    .required{color:var(--gold)}
+
+    .checkbox-row{
+      display:flex;align-items:flex-start;gap:.6rem;
+      padding:.65rem .75rem;
+      background:var(--light);border-radius:var(--radius);
+      border:1px solid var(--border);margin-bottom:.75rem;
+    }
+    .checkbox-row input[type=checkbox]{width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:var(--purple);cursor:pointer}
+    .checkbox-text{font-size:12px;color:var(--text);line-height:1.5}
+    .checkbox-text small{color:var(--text-light);display:block;font-size:11px;margin-top:1px}
+
+    .btn-submit{
+      width:100%;padding:.65rem;
+      background:var(--purple);color:var(--white);
+      border:none;border-radius:var(--radius);
+      font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+      cursor:pointer;transition:background .15s;
+    }
+    .btn-submit:hover{background:var(--purple-dark)}
+    .btn-submit:disabled{opacity:.6;cursor:not-allowed}
+
+    .errors-box{
+      background:var(--danger-bg);color:var(--danger);
+      padding:.6rem .75rem;border-radius:var(--radius);
+      border-left:3px solid var(--danger);
+      margin-bottom:.75rem;font-size:12px;
+    }
+
+    .success-box{text-align:center;padding:2rem 1rem}
+    .success-icon{
+      width:56px;height:56px;
+      background:var(--success-bg);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 1rem;
+    }
+    .success-icon svg{width:28px;height:28px;stroke:var(--success)}
+    .success-box h3{font-size:17px;font-weight:600;color:var(--text);margin-bottom:.5rem}
+    .success-box p{font-size:13px;color:var(--text-mid);line-height:1.6}
+    .success-num{
+      font-size:22px;font-weight:600;
+      color:var(--purple);margin:.75rem 0;
+      background:var(--light);padding:.5rem 1rem;
+      border-radius:var(--radius);display:inline-block;
+    }
+
+    @media(max-width:500px){
+      .form-row,.form-row-3{grid-template-columns:1fr}
+      .popup-overlay{padding:.5rem}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Página en blanco — la empresa pone su contenido aquí -->
+<main></main>
+
+<!-- BOTÓN FLOTANTE -->
+<div class="fab">
+  <button class="fab-btn" onclick="abrirPopup()" title="Solicitar espacio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 17l2-8h14l2 8M12 3v6M8 9h8"/>
+      <path d="M2 20s3-2 10-2 10 2 10 2"/>
+    </svg>
+  </button>
+  <span class="fab-label">Reservar</span>
+</div>
+
+<!-- POPUP -->
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup">
+
+    <div class="popup-header">
+      <div>
+        <h2>Solicitud de ingreso a marina</h2>
+        <p>Complete el formulario y le contactaremos a la brevedad</p>
+      </div>
+      <button class="popup-close" onclick="cerrarPopup()">✕</button>
+    </div>
+
+    <div class="popup-body" id="popup-body">
+      <div id="form-error" class="errors-box" style="display:none"></div>
+
+      <form id="form-solicitud">
+        {% csrf_token %}
+
+        <div class="section-label">Solicitante</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre completo <span class="required">*</span></label>
+            <input type="text" name="fullname" placeholder="Juan García" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono <span class="required">*</span></label>
+            <input type="tel" name="telefono" placeholder="+52 312 000 0000" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico <span class="required">*</span></label>
+          <input type="email" name="email" placeholder="correo@ejemplo.com" required>
+          <p class="hint">Recibirá la confirmación en este correo</p>
+        </div>
+
+        <div class="section-label">Embarcación</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" name="nombre_bote" placeholder="Marea Alta" required>
+          </div>
+          <div class="form-group">
+            <label>Tipo <span class="required">*</span></label>
+            <select name="tipo_barco" required>
+              <option value="">Seleccione</option>
+              {% for tipo in tipos_barco %}
+                <option value="{{ tipo.pk }}">{{ tipo.tipo_barco }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Eslora (m) <span class="required">*</span></label>
+            <input type="number" name="eslora" step="0.01" min="0.01" placeholder="12.50" required>
+            <p class="hint">Length</p>
+          </div>
+          <div class="form-group">
+            <label>Manga (m) <span class="required">*</span></label>
+            <input type="number" name="manga" step="0.01" min="0.01" placeholder="4.20" required>
+            <p class="hint">Beam</p>
+          </div>
+          <div class="form-group">
+            <label>Calado (m) <span class="required">*</span></label>
+            <input type="number" name="calado" step="0.01" min="0.01" placeholder="1.80" required>
+            <p class="hint">Draft</p>
+          </div>
+        </div>
+
+        <div class="section-label">Estancia</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Llegada / Arrival <span class="required">*</span></label>
+            <input type="date" name="fecha_llegada" required>
+          </div>
+          <div class="form-group">
+            <label>Salida / Departure <span class="required">*</span></label>
+            <input type="date" name="fecha_salida" required>
+          </div>
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" name="primera_entrada_mexico" id="primera_entrada">
+          <div class="checkbox-text">
+            Primera entrada a México / First entry to Mexico
+            <small>Marque si es la primera vez que su embarcación ingresa a aguas mexicanas</small>
+          </div>
+        </div>
+
+        <div class="section-label">Información adicional</div>
+        <div class="form-group">
+          <label>Solicitudes especiales / Special requests</label>
+          <textarea name="comentario" placeholder="Requerimientos especiales, servicios adicionales..."></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="popup-footer" id="popup-footer">
+      <button class="btn-submit" id="btn-submit" onclick="enviarSolicitud()">
+        Enviar solicitud
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CSRF = "{{ csrf_token }}";
+
+function abrirPopup(){
+  document.getElementById('popup-overlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function cerrarPopup(){
+  document.getElementById('popup-overlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+document.getElementById('popup-overlay').addEventListener('click',ev=>{
+  if(ev.target===document.getElementById('popup-overlay')) cerrarPopup();
+});
+
+// validar fechas
+document.querySelector('[name=fecha_salida]').addEventListener('change',function(){
+  const llegada=document.querySelector('[name=fecha_llegada]').value;
+  if(llegada&&this.value&&this.value<=llegada){
+    this.setCustomValidity('La fecha de salida debe ser posterior a la llegada.');
+  } else { this.setCustomValidity(''); }
+});
+
+async function enviarSolicitud(){
+  const form=document.getElementById('form-solicitud');
+  const errEl=document.getElementById('form-error');
+  errEl.style.display='none';
+  if(!form.checkValidity()){ form.reportValidity(); return; }
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const data=new FormData(form);
+  data.append('csrfmiddlewaretoken',CSRF);
+  try{
+    const res=await fetch('/solicitar/',{method:'POST',body:data});
+    const json=await res.json();
+    if(json.ok){
+      document.getElementById('popup-body').innerHTML=`
+        <div class="success-box">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3>¡Solicitud enviada!</h3>
+          <p>Hemos recibido su solicitud.<br>Le contactaremos al correo <strong>${json.email}</strong></p>
+          <div class="success-num">#${json.solicitud_id}</div>
+          <p style="font-size:11px;color:var(--text-light)">Guarde este número de referencia</p>
+        </div>`;
+      document.getElementById('popup-footer').innerHTML=`
+        <button class="btn-submit" onclick="cerrarPopup()" style="background:var(--success)">Cerrar</button>`;
+    } else {
+      errEl.textContent=json.error; errEl.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar solicitud';
+    }
+  } catch(err){
+    errEl.textContent='Error de conexión. Intente de nuevo.';
+    errEl.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar solicitud';
+  }
+}
+</script>
+</body>
+</html>

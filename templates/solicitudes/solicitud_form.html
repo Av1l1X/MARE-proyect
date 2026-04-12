@@ -1,77 +1,64 @@
 {% extends "base.html" %}
-
-{% block title %}
-    {% if solicitud %}Editar solicitud{% else %}Nueva solicitud{% endif %}
-{% endblock %}
+{% block title %}{% if solicitud.pk %}Editar solicitud{% else %}Nueva solicitud{% endif %} — MARE{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>{% if solicitud %}Editar solicitud{% else %}Nueva solicitud{% endif %}</h2>
+<div class="page-header">
+  <h2>{% if solicitud.pk %}Editar solicitud #{{ solicitud.pk }}{% else %}Nueva solicitud{% endif %}</h2>
+  <a href="{% url 'solicitud_list' %}" class="btn btn-default">← Volver</a>
+</div>
 
-    {% if errors %}
-        <div class="errors-box">
-            <strong>Corrige los siguientes errores:</strong>
-            <ul>
-                {% if errors.items %}
-                    {% for campo, lista in errors.items %}
-                        {% for error in lista %}
-                            <li><strong>{{ campo }}:</strong> {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                {% else %}
-                    {% for error in errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                {% endif %}
-            </ul>
-        </div>
-    {% endif %}
+{% if errors %}
+<div class="errors-box">
+  {% if errors.items %}
+    {% for campo, lista in errors.items %}
+      {% for e in lista %}<p><strong>{{ campo }}:</strong> {{ e }}</p>{% endfor %}
+    {% endfor %}
+  {% else %}
+    {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+  {% endif %}
+</div>
+{% endif %}
 
-    <form method="post">
-        {% csrf_token %}
+<div class="card" style="max-width:600px">
+  <form method="post">
+    {% csrf_token %}
 
-        <label for="embarcacion">Embarcación</label>
-        <select name="embarcacion" id="embarcacion" required>
-            <option value="">Seleccione una embarcación</option>
-            {% for embarcacion in embarcaciones %}
-                <option value="{{ embarcacion.id }}"
-                    {% if solicitud.embarcacion_id == embarcacion.id %}selected{% endif %}>
-                    {{ embarcacion.nombre_bote }} - {{ embarcacion.cliente.fullname }}
-                </option>
-            {% endfor %}
-        </select>
+    <div class="form-group">
+      <label>Embarcación</label>
+      <select name="embarcacion" required>
+        <option value="">Selecciona una embarcación</option>
+        {% for emb in embarcaciones %}
+          <option value="{{ emb.pk }}" {% if solicitud.embarcacion_id == emb.pk %}selected{% endif %}>
+            {{ emb.nombre_bote }} — {{ emb.cliente.fullname }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-        <label for="fecha_llegada">Fecha de llegada</label>
-        <input type="date" name="fecha_llegada" id="fecha_llegada"
-               value="{% if solicitud.fecha_llegada %}{{ solicitud.fecha_llegada|date:'Y-m-d' }}{% endif %}" required>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-group">
+        <label>Fecha de llegada</label>
+        <input type="date" name="fecha_llegada"
+          value="{{ solicitud.fecha_llegada|date:'Y-m-d'|default:'' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Fecha de salida</label>
+        <input type="date" name="fecha_salida"
+          value="{{ solicitud.fecha_salida|date:'Y-m-d'|default:'' }}" required>
+      </div>
+    </div>
 
-        <label for="fecha_salida">Fecha de salida</label>
-        <input type="date" name="fecha_salida" id="fecha_salida"
-               value="{% if solicitud.fecha_salida %}{{ solicitud.fecha_salida|date:'Y-m-d' }}{% endif %}" required>
+    <div class="form-group">
+      <label>Comentario</label>
+      <textarea name="comentario" rows="3">{{ solicitud.comentario|default:'' }}</textarea>
+    </div>
 
-        <label for="comentario">Comentario</label>
-        <textarea name="comentario" id="comentario" rows="4">{% if solicitud.comentario %}{{ solicitud.comentario }}{% endif %}</textarea>
-
-        <label for="estado">Estado</label>
-        <select name="estado" id="estado">
-            {% for valor, texto in estados|default:solicitud.ESTADOS %}
-                <option value="{{ valor }}"
-                    {% if solicitud.estado == valor %}selected{% endif %}>
-                    {{ texto }}
-                </option>
-            {% endfor %}
-            {% if not solicitud %}
-                <option value="PENDIENTE" selected>Pendiente</option>
-                <option value="ACTIVA">Activa</option>
-                <option value="COMPLETADA">Completada</option>
-                <option value="CANCELADA">Cancelada</option>
-            {% endif %}
-        </select>
-
-        <div style="margin-top: 1rem;">
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
-        </div>
-    </form>
+    <div style="margin-top:1.25rem;display:flex;gap:.5rem">
+      <button type="submit" class="btn btn-primary">
+        {% if solicitud.pk %}Guardar cambios{% else %}Crear solicitud{% endif %}
+      </button>
+      <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
+    </div>
+  </form>
 </div>
 {% endblock %}
