@@ -8,8 +8,6 @@ from apps.solicitudes.models import Solicitud
 from django.utils import timezone
 
 
-
-
 @login_required
 def mapa_view(request):
     solicitud_id = request.GET.get('solicitud_id')
@@ -161,3 +159,32 @@ def asignar_espacio(request):
 
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def inicio(request):
+    from django.utils import timezone
+    from apps.muelles.models import Espacio
+    from apps.solicitudes.models import Solicitud
+    from apps.asignaciones.models import Asignacion
+
+    hoy = timezone.now().date()
+
+    ocupados = Asignacion.objects.filter(
+        fecha_inicio__lte=hoy,
+        fecha_fin__gte=hoy,
+        activa=True,
+    ).values_list('espacios', flat=True).distinct().count()
+
+    total_espacios = Espacio.objects.filter(es_pasillo=False, activo=True).count()
+    libres         = total_espacios - ocupados
+    pendientes     = Solicitud.objects.filter(estado__in=['PENDIENTE','EN_ESPERA']).count()
+
+    return render(request, 'inicio.html', {
+        'ocupados':       ocupados,
+        'libres':         libres,
+        'pendientes':     pendientes,
+        'total_espacios': total_espacios,
+        'fecha_hoy':      hoy.strftime('%d/%m/%Y'),
+        'fecha_hoy_iso':  hoy.strftime('%Y-%m-%d'),
+    })
