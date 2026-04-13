@@ -188,7 +188,6 @@ def zonas_tierra_json(request):
 @require_POST
 def zonas_tierra_guardar(request):
     from .models import ZonaTierra
-    import json
     try:
         data  = json.loads(request.body)
         zonas = data.get('zonas', [])

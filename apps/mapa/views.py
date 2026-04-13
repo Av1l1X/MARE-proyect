@@ -7,6 +7,9 @@ from apps.muelles.models import Espacio, EtiquetaMuelle, ZonaTierra
 from apps.asignaciones.models import Asignacion, Administrador
 from apps.solicitudes.models import Solicitud
 
+import json
+from django.db import transaction
+
 
 
 @login_required
@@ -137,9 +140,6 @@ def disponibilidad_json(request):
 def asignar_espacio(request):
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'error': 'Método no permitido'}, status=405)
-
-    import json
-    from django.db import transaction
 
     try:
         data         = json.loads(request.body)

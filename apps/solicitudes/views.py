@@ -6,9 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.http import JsonResponse
-
-
-from apps.embarcaciones.models import Embarcacion
 from .models import Solicitud
 
 
