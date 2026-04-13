@@ -251,4 +251,5 @@ def solicitud_detalle_json(request, pk):
         'estado':       solicitud.get_estado_display(),
         'comentario':   solicitud.comentario or '',
         'asignaciones': asignaciones_data,
+        'email_cliente': solicitud.embarcacion.cliente.email,
     })

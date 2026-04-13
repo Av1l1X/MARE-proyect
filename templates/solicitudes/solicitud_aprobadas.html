@@ -113,8 +113,10 @@
 
     <!-- Footer popup — botones -->
     <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap">
-      <a id="popup-btn-reasignar" href="#" class="btn btn-accent btn-sm">Reasignar</a>
-      <a id="popup-btn-editar"    href="#" class="btn btn-default btn-sm">Editar solicitud</a>
+      <a id="popup-btn-contactar"  href="#" class="btn btn-info btn-sm">Contactar</a>
+      <a id="popup-btn-revisar"    href="#" class="btn btn-default btn-sm" target="_blank">Revisar</a>
+      <a id="popup-btn-reasignar"  href="#" class="btn btn-accent btn-sm">Reasignar</a>
+      <a id="popup-btn-editar"     href="#" class="btn btn-default btn-sm">Editar</a>
       <a id="popup-btn-rechazar"  href="#" class="btn btn-danger btn-sm">Rechazar</a>
       <button onclick="cerrarPopup()" class="btn btn-default btn-sm" style="margin-left:auto">Cerrar</button>
     </div>
@@ -180,20 +182,14 @@ async function abrirPopup(pk){
     // botones
     document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
     document.getElementById('popup-btn-editar').href    = `/solicitudes/${pk}/editar/`;
-    document.getElementById('popup-btn-rechazar').href  = '#';
-    document.getElementById('popup-btn-rechazar').onclick = (e) => {
+    document.getElementById('popup-btn-contactar').href = '#';
+    document.getElementById('popup-btn-contactar').onclick = (e) => {
       e.preventDefault();
-      if(confirm('¿Rechazar esta solicitud?')){
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/solicitudes/${pk}/estado/RECHAZADA/`;
-        const csrf  = document.createElement('input');
-        csrf.type   = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = CSRF;
-        form.appendChild(csrf);
-        document.body.appendChild(form);
-        form.submit();
-      }
+      window.open(`https://mail.google.com/mail/?view=cm&to=${data.email_cliente}&su=Solicitud de ingreso — ${data.embarcacion}&body=Estimado ${data.cliente},%0A%0AEn relación a su solicitud de ingreso a la marina...`);
     };
+    document.getElementById('popup-btn-revisar').href   = 
+      `https://mail.google.com/mail/u/0/#search/${data.email_cliente}`;
+
 
   } catch(err){
     document.getElementById('popup-historial').innerHTML =

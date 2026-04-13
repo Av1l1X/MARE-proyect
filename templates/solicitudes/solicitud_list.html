@@ -50,18 +50,25 @@
             {% if sol.estado == 'PENDIENTE' %}
               <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'EN_ESPERA' %}" style="display:inline">
                 {% csrf_token %}
-                <button class="btn btn-success btn-sm">Aprobar</button>
+                <button class="btn btn-success btn-sm">En espera</button>
               </form>
               <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
                 {% csrf_token %}
                 <button class="btn btn-danger btn-sm">Rechazar</button>
               </form>
-            {% elif sol.estado == 'EN_ESPERA' %}
+              
+              {% elif sol.estado == 'EN_ESPERA' %}
+                <button onclick="window.open('https://mail.google.com/mail/?view=cm&to={{ sol.embarcacion.cliente.email }}&su=Solicitud — {{ sol.embarcacion.nombre_bote }}&body=Estimado {{ sol.embarcacion.cliente.fullname }}')" 
+                  class="btn btn-info btn-sm">Contactar</button>
+                <a href="https://mail.google.com/mail/u/0/#search/{{ sol.embarcacion.cliente.email }}"
+                  target="_blank" class="btn btn-default btn-sm">Revisar</a>
                 <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
                 <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
                   {% csrf_token %}
                   <button class="btn btn-danger btn-sm">Rechazar</button>
                 </form>
+
+
             {% elif sol.estado == 'APROBADA' %}
               <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
             {% endif %}
