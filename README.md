@@ -42,9 +42,9 @@ El sistema se basa en una arquitectura cliente-servidor, donde los usuarios inte
 ---
 
 ## 📁 Estructura del proyecto
-
-```
 plaintext
+```
+
 MARE_PROYECTO/
 ├── apps/
 │   ├── asignaciones/
