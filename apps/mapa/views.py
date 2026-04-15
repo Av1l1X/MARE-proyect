@@ -54,6 +54,21 @@ def disponibilidad_json(request):
         for a in asignaciones:
             for e in a.espacios.all():
                 ocupados.add(e.id)
+                
+    tipo_barco_id = request.GET.get('tipo_barco_id')
+
+    # espacios ocupados por ese tipo de barco
+    espacios_tipo = set()
+    if tipo_barco_id and fecha:
+        asigs_tipo = Asignacion.objects.filter(
+            fecha_inicio__lte=fecha,
+            fecha_fin__gte=fecha,
+            activa=True,
+            solicitud__embarcacion__tipo_barco_id=tipo_barco_id,
+        ).prefetch_related('espacios')
+        for a in asigs_tipo:
+            for e in a.espacios.all():
+                espacios_tipo.add(e.id)
 
     # Datos de la embarcación si viene con solicitud
     eslora = manga = None
@@ -96,6 +111,7 @@ def disponibilidad_json(request):
             'rotacion':   float(e.rotacion),
             'es_pasillo': e.es_pasillo,
             'estado':     estado,
+            'resaltado': bool(tipo_barco_id) and (e.id in espacios_tipo),
         })
 
     zonas     = list(ZonaTierra.objects.values('id','puntos','color','nombre'))
@@ -178,6 +194,7 @@ def asignar_espacio(request):
             asignacion.validar_traslape_espacios()
 
             solicitud.estado = 'APROBADA'
+            solicitud.full_clean()
             solicitud.save()
 
         return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})

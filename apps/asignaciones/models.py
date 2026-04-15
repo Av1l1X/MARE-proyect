@@ -70,8 +70,6 @@ class Asignacion(models.Model):
                 raise ValidationError("La fecha fin no puede ser posterior a la salida de la solicitud.")
         
     def validar_traslape_espacios(self):
-        # Se llama DESPUÉS de guardar los espacios (post M2M save)
-        # Verifica que ningún espacio seleccionado esté ocupado en esas fechas
         espacios_ids = self.espacios.values_list('id', flat=True)
         traslapes = Asignacion.objects.filter(
             espacios__in=espacios_ids,

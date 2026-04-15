@@ -259,8 +259,9 @@ function render(){
     r.setAttribute('x',e.pos_x); r.setAttribute('y',e.pos_y);
     r.setAttribute('width',e.ancho); r.setAttribute('height',e.alto);
     r.setAttribute('rx','2');
-    r.setAttribute('fill',col.fill); r.setAttribute('stroke',col.stroke);
-    r.setAttribute('stroke-width',sel?'1.5':'0.8');
+    r.setAttribute('fill', col.fill);
+    r.setAttribute('stroke',      e.resaltado ? '#fff021' : col.stroke);
+    r.setAttribute('stroke-width', e.resaltado ? '3.5' : sel ? '5.5' : '0.8');
 
     // etiqueta de tamaño solo en modo normal
     g.appendChild(r);
